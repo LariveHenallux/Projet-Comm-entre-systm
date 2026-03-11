@@ -3,6 +3,9 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
+#define trigPin 5
+#define echoPin 18
+
 const char* ssid     = "WIFI-IoT";
 const char* password = "IoT-1234";
 const char* deviceName = "M5-GroupeX";
