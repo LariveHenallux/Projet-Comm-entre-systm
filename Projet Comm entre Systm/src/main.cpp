@@ -5,8 +5,8 @@
 
 const char* ssid     = "WIFI-IoT";
 const char* password = "IoT-1234";
-const char* deviceName = "M5-GroupeX";
-const char* OTAPassword = "123456";// mot de passe upload sketch
+const char* deviceName = "Groupe_RAH";
+const char* OTAPassword = "tiensdonc";// mot de passe upload sketch
 const char* mqtt_server = "IoT-broker.local";
 
 WiFiClient espClient;
@@ -42,16 +42,18 @@ void setup() {
   OTASetup();
   // -----------------------------
   // Rest of the setup code here : 
-  // configure the trigger pin to output mode
-  pinMode(trigPin, OUTPUT);
-  // configure the echo pin to input mode
-  pinMode(echoPin, INPUT);
+  
 
 }
 
 void loop() {
   ArduinoOTA.handle();  // Continuously check for update requests.
   M5.update();
+  // appuie sur un bouton envoie un message MQTT
+  if (M5.BtnA.wasPressed()) {
+    client.publish("Groupe_RAH/BtnA", "BtnA was pressed");
+    M5.lcd.println("BtnA was pressed");
+  }
   // -----------------------------
   // Rest of the loop code here :
 
