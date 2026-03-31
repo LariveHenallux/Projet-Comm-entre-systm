@@ -7,14 +7,20 @@
 #define trigPin 5
 #define echoPin 18
 
-Servo myservo;
-int servoPin = 22;
+Servo servo1;  // Premier servo
+Servo servo2;  // Deuxième servo
+
+int pinServo1 = 22;
+int pinServo2 = 23;
 
 const char* ssid     = "WIFI-IoT";
 const char* password = "IoT-1234";
 const char* deviceName = "Groupe_RAH";
 const char* OTAPassword = "tiensdonc";// mot de passe upload sketch
 const char* mqtt_server = "IoT-broker.local"; //ping IoT-broker.local
+
+int positionActuelle1 = 0; // Position actuelle du servo1
+int positionActuelle2 = 0; // Position actuelle du servo2
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -42,6 +48,31 @@ void OTASetup(){
   M5.lcd.println("OTA ready!");  // M5.lcd port output format string.
 }
 
+void Servomoteur1(int anglevoulue) {
+  int increment = (anglevoulue > positionActuelle1) ? 1 : -1;
+  if (anglevoulue != positionActuelle1) {
+    for ( int pos = positionActuelle1; pos <= anglevoulue; pos += increment)
+    {
+      servo1.write(pos);
+      delay(20);
+    }
+  else {
+      for ( int pos = positionActuelle1; pos >= anglevoulue; pos += increment)
+    {
+      servo1.write(pos);
+      delay(20);
+    }
+  }
+    
+}
+
+void Servomoteur2(int anglevoulue, int angleprecedent){
+  for (int pos = angleprecedent; pos <= anglevoulue; pos++) {
+    servo2.write(pos);
+    delay(20);
+  }
+}
+
 void setup() {
   M5.begin();  // Init M5Core
   M5.Power.begin(); // initialize battery usage
@@ -53,8 +84,11 @@ void setup() {
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
-  myservo.setPeriodHertz(50);    // 50 Hz pour SG90
-  myservo.attach(servoPin, 500, 2400);  // Min/max µs pour SG90
+  servo1.setPeriodHertz(50);
+  servo1.attach(pinServo1, 500, 2400);
+  
+  servo2.setPeriodHertz(50);
+  servo2.attach(pinServo2, 500, 2400);
   
 
 }
@@ -63,15 +97,11 @@ void loop() {
   ArduinoOTA.handle();  // Continuously check for update requests.
   M5.update();
   // appuie sur un bouton envoie un message MQTT
-  for (int pos = 0; pos <= 180; pos++) {
-    myservo.write(pos);
-    delay(15);
-  }
-  for (int pos = 180; pos >= 0; pos--) {
-    myservo.write(pos);
-    delay(15);
-  }
   
+  Servomoteur1(90);
+  delay(1000);
+  Servomoteur1(90);
+  delay(1000);
   // -----------------------------
   // Rest of the loop code here :
 
