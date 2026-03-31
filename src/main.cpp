@@ -2,15 +2,19 @@
 #include <M5Stack.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ESP32Servo.h>
 
 #define trigPin 5
 #define echoPin 18
+
+Servo myservo;
+int servoPin = 22;
 
 const char* ssid     = "WIFI-IoT";
 const char* password = "IoT-1234";
 const char* deviceName = "Groupe_RAH";
 const char* OTAPassword = "tiensdonc";// mot de passe upload sketch
-const char* mqtt_server = "IoT-broker.local";
+const char* mqtt_server = "IoT-broker.local"; //ping IoT-broker.local
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -45,6 +49,12 @@ void setup() {
   OTASetup();
   // -----------------------------
   // Rest of the setup code here : 
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+  myservo.setPeriodHertz(50);    // 50 Hz pour SG90
+  myservo.attach(servoPin, 500, 2400);  // Min/max µs pour SG90
   
 
 }
@@ -53,10 +63,15 @@ void loop() {
   ArduinoOTA.handle();  // Continuously check for update requests.
   M5.update();
   // appuie sur un bouton envoie un message MQTT
-  if (M5.BtnA.wasPressed()) {
-    client.publish("Groupe_RAH/BtnA", "BtnA was pressed");
-    M5.lcd.println("BtnA was pressed");
+  for (int pos = 0; pos <= 180; pos++) {
+    myservo.write(pos);
+    delay(15);
   }
+  for (int pos = 180; pos >= 0; pos--) {
+    myservo.write(pos);
+    delay(15);
+  }
+  
   // -----------------------------
   // Rest of the loop code here :
 
