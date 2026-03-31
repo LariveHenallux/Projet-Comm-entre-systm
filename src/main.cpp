@@ -56,14 +56,14 @@ void Servomoteur1(int anglevoulue) {
       servo1.write(pos);
       delay(20);
     }
-  else {
-      for ( int pos = positionActuelle1; pos >= anglevoulue; pos += increment)
+  }else {
+    for ( int pos = positionActuelle1; pos >= anglevoulue; pos += increment)
     {
       servo1.write(pos);
       delay(20);
     }
   }
-    
+  positionActuelle1 = anglevoulue; // Update the current position
 }
 
 void Servomoteur2(int anglevoulue, int angleprecedent){
@@ -72,6 +72,20 @@ void Servomoteur2(int anglevoulue, int angleprecedent){
     delay(20);
   }
 }
+
+void listInstruction(int temps, int degrefinal, int degreInit) {
+    
+    int hertz = temps * 10;
+    int step = (degrefinal - degreInit) / hertz; // Calculate the step size for each increment
+    int instruction = degreInit;
+    while (instruction != degrefinal) {
+        int instruction = instruction  + step; // Initialize all elements to the corresponding step value
+        servo1.write(instruction);
+        delay(100);
+    }
+    
+}
+
 
 void setup() {
   M5.begin();  // Init M5Core
@@ -86,6 +100,7 @@ void setup() {
   ESP32PWM::allocateTimer(3);
   servo1.setPeriodHertz(50);
   servo1.attach(pinServo1, 500, 2400);
+
   
   servo2.setPeriodHertz(50);
   servo2.attach(pinServo2, 500, 2400);
@@ -97,11 +112,11 @@ void loop() {
   ArduinoOTA.handle();  // Continuously check for update requests.
   M5.update();
   // appuie sur un bouton envoie un message MQTT
-  
-  Servomoteur1(90);
-  delay(1000);
-  Servomoteur1(90);
-  delay(1000);
+ 
+  int degremqtt = 100;
+  int temps = 5;
+  listInstruction(temps, degremqtt, positionActuelle1);
+
   // -----------------------------
   // Rest of the loop code here :
 
