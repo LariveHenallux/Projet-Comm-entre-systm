@@ -6,6 +6,8 @@
 
 #define trigPin 5
 #define echoPin 18
+#define s_pin1 16
+#define s_pin2 17
 
 Servo servo1;  // Premier servo
 Servo servo2;  // Deuxième servo
@@ -45,50 +47,23 @@ void OTASetup(){
   ArduinoOTA.setHostname(deviceName);  // Set the network port name.
   ArduinoOTA.setPassword(OTAPassword);  // Set the network port connection
   ArduinoOTA.begin();            // Initialize the OTA.
-  M5.lcd.println("OTA ready!");  // M5.lcd port output format string.
+  M5.lcd.println("OTA ready!");
+  M5.lcd.println(analogRead(s_pin1));
+  M5.lcd.println(analogRead(s_pin2));
+  M5.lcd.println("CAPTEUR 1");  // M5.lcd port output format string.
 }
 
-void Servomoteur1(int anglevoulue) {
-  int increment = (anglevoulue > positionActuelle1) ? 1 : -1;
-  if (anglevoulue != positionActuelle1) {
-    for ( int pos = positionActuelle1; pos <= anglevoulue; pos += increment)
-    {
-      servo1.write(pos);
-      delay(20);
-    }
-  }else {
-    for ( int pos = positionActuelle1; pos >= anglevoulue; pos += increment)
-    {
-      servo1.write(pos);
-      delay(20);
-    }
-  }
-  positionActuelle1 = anglevoulue; // Update the current position
+void retourCapteur1(){
+  M5.lcd.println(analogRead(s_pin1));
 }
-
-void Servomoteur2(int anglevoulue, int angleprecedent){
-  for (int pos = angleprecedent; pos <= anglevoulue; pos++) {
-    servo2.write(pos);
-    delay(20);
-  }
-}
-
-void listInstruction(int temps, int degrefinal, int degreInit) {
-    
-    int hertz = temps * 10;
-    int step = (degrefinal - degreInit) / hertz; // Calculate the step size for each increment
-    int instruction = degreInit;
-    while (instruction != degrefinal) {
-        int instruction = instruction  + step; // Initialize all elements to the corresponding step value
-        servo1.write(instruction);
-        delay(100);
-    }
-    
+void retourCapteur2(){
+  M5.lcd.println(analogRead(s_pin2));
 }
 
 
 void setup() {
   M5.begin();  // Init M5Core
+  M5.Lcd.setTextSize(2);
   M5.Power.begin(); // initialize battery usage
   WifiConnect();
   OTASetup();
@@ -98,27 +73,21 @@ void setup() {
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
-  servo1.setPeriodHertz(50);
-  servo1.attach(pinServo1, 500, 2400);
-
-  
-  servo2.setPeriodHertz(50);
-  servo2.attach(pinServo2, 500, 2400);
-  
 
 }
 
 void loop() {
+
   ArduinoOTA.handle();  // Continuously check for update requests.
   M5.update();
   // appuie sur un bouton envoie un message MQTT
- 
-  int degremqtt = 100;
-  int temps = 5;
-  listInstruction(temps, degremqtt, positionActuelle1);
+  // M5.Lcd.fillScreen(BLACK);
+  // M5.Lcd.setCursor(0,0);
+  // M5.Lcd.setTextColor(WHITE,BLACK);
+  retourCapteur1();
+  retourCapteur2();
 
   // -----------------------------
-  // Rest of the loop code here :
-
+  // Rest of the loop code here : 
     
 }
