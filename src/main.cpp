@@ -14,6 +14,7 @@ Servo servo2;  // Deuxième servo
 
 int pinServo1 = 22;
 int pinServo2 = 23;
+int a=0;
 
 const char* ssid     = "WIFI-IoT";
 const char* password = "IoT-1234";
@@ -81,11 +82,16 @@ void loop() {
   ArduinoOTA.handle();  // Continuously check for update requests.
   M5.update();
   // appuie sur un bouton envoie un message MQTT
-  // M5.Lcd.fillScreen(BLACK);
-  // M5.Lcd.setCursor(0,0);
+if (a==0){
+  M5.Lcd.fillScreen(BLACK);
+  a+=1;
+}
+  M5.Lcd.setCursor(0,0);
   // M5.Lcd.setTextColor(WHITE,BLACK);
   retourCapteur1();
+  delay(100);
   retourCapteur2();
+  delay(100);
 
   // -----------------------------
   // Rest of the loop code here : 
