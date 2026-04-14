@@ -6,8 +6,8 @@
 
 #define trigPin 5
 #define echoPin 18
-#define s_pin1 16
-#define s_pin2 17
+#define s_pin1 35
+#define s_pin2 36
 
 Servo servo1;  // Premier servo
 Servo servo2;  // Deuxième servo
@@ -21,7 +21,8 @@ const char* password = "IoT-1234";
 const char* deviceName = "Groupe_RAH";
 const char* OTAPassword = "tiensdonc";// mot de passe upload sketch
 const char* mqtt_server = "IoT-broker.local"; //ping IoT-broker.local
-
+const char* topic1 = "Camion/PoidsEntree";
+const char* topic2 = "Camion/PoidsSortie";
 int positionActuelle1 = 0; // Position actuelle du servo1
 int positionActuelle2 = 0; // Position actuelle du servo2
 
@@ -43,7 +44,19 @@ void WifiConnect(){
   M5.lcd.print("IP address: ");
   M5.lcd.println(WiFi.localIP());  // Output IP Address.
 }
-
+void reconnect() {
+  while (!client.connected()) {
+    M5.Lcd.println("Connexion MQTT...");
+    
+    if (client.connect("M5StackClient")) {
+      M5.Lcd.println("MQTT connecte !");
+    } else {
+      M5.Lcd.print("Erreur, rc=");
+      M5.Lcd.print(client.state());
+      delay(2000);
+    }
+  }
+}
 void OTASetup(){
   ArduinoOTA.setHostname(deviceName);  // Set the network port name.
   ArduinoOTA.setPassword(OTAPassword);  // Set the network port connection
@@ -53,14 +66,29 @@ void OTASetup(){
   M5.lcd.println(analogRead(s_pin2));
   M5.lcd.println("CAPTEUR 1");  // M5.lcd port output format string.
 }
+float lireTension(int pin) {
+  int valeur = analogRead(pin);
 
-void retourCapteur1(){
-  M5.lcd.println(analogRead(s_pin1));
-}
-void retourCapteur2(){
-  M5.lcd.println(analogRead(s_pin2));
+  // Conversion en tension 0–3.3V
+  float tension = valeur * (3.3 / 4095.0);
+
+  // Correction pont diviseur (ex: 10k / 10k → x2)
+  float tension_reelle = tension * 2;
+
+  return tension_reelle;
 }
 
+float retourCapteur1(){
+  float v = lireTension(s_pin1);
+  M5.Lcd.printf("Capteur1: %.2f V\n", v);
+  return v;
+}
+
+float retourCapteur2(){
+  float v = lireTension(s_pin2);
+  M5.Lcd.printf("Capteur2: %.2f V\n", v);
+  return v;
+}
 
 void setup() {
   M5.begin();  // Init M5Core
@@ -68,6 +96,7 @@ void setup() {
   M5.Power.begin(); // initialize battery usage
   WifiConnect();
   OTASetup();
+  client.setServer(mqtt_server, 1883);
   // -----------------------------
   // Rest of the setup code here : 
   ESP32PWM::allocateTimer(0);
@@ -78,7 +107,10 @@ void setup() {
 }
 
 void loop() {
-
+if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
   ArduinoOTA.handle();  // Continuously check for update requests.
   M5.update();
   // appuie sur un bouton envoie un message MQTT
@@ -88,9 +120,14 @@ if (a==0){
 }
   M5.Lcd.setCursor(0,0);
   // M5.Lcd.setTextColor(WHITE,BLACK);
-  retourCapteur1();
-  delay(100);
-  retourCapteur2();
+  float c1=retourCapteur1();
+  float c2=retourCapteur2();
+  char message1[50];
+  char message2[50];
+  dtostrf(c1, 4, 2, message1);
+  client.publish(topic1, message1);
+  dtostrf(c2, 4, 2, message2);
+  client.publish(topic2, message2);
   delay(100);
 
   // -----------------------------
