@@ -8,7 +8,7 @@
 #define echoPin 18
 #define s_pin1 35
 #define s_pin2 36
-
+#define R1 26
 Servo servo1;  // Premier servo
 Servo servo2;  // Deuxième servo
 
@@ -23,6 +23,8 @@ const char* OTAPassword = "tiensdonc";// mot de passe upload sketch
 const char* mqtt_server = "IoT-broker.local"; //ping IoT-broker.local
 const char* topic1 = "Camion/PoidsEntree";
 const char* topic2 = "Camion/PoidsSortie";
+const char* topic3 = "Camion/R1";
+const char* topic4 = "Camion/R2";
 int positionActuelle1 = 0; // Position actuelle du servo1
 int positionActuelle2 = 0; // Position actuelle du servo2
 
@@ -89,6 +91,28 @@ float retourCapteur2(){
   M5.Lcd.printf("Capteur2: %.2f V\n", v);
   return v;
 }
+void rougeOn(int pin){
+  digitalWrite(pin, HIGH);
+}
+void rougeOff(int pin){
+  digitalWrite(pin, LOW);
+}
+void callback(char* topic, byte* payload, unsigned int length) {
+
+  String message = "";
+
+  for (int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+
+  message.trim();
+  message.toUpperCase();
+
+  // -------- LED R1 --------
+  if (message == "true") rougeOn(R1);
+  if (message == "false") rougeOff(R1);
+
+}
 
 void setup() {
   M5.begin();  // Init M5Core
@@ -97,15 +121,16 @@ void setup() {
   WifiConnect();
   OTASetup();
   client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
   // -----------------------------
   // Rest of the setup code here : 
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
-
+  pinMode(R1, OUTPUT);
+  rougeOff(R1);
 }
-
 void loop() {
 if (!client.connected()) {
     reconnect();
@@ -118,6 +143,7 @@ if (a==0){
   M5.Lcd.fillScreen(BLACK);
   a+=1;
 }
+  client.subscribe(topic3);
   M5.Lcd.setCursor(0,0);
   // M5.Lcd.setTextColor(WHITE,BLACK);
   float c1=retourCapteur1();
@@ -128,7 +154,8 @@ if (a==0){
   client.publish(topic1, message1);
   dtostrf(c2, 4, 2, message2);
   client.publish(topic2, message2);
-  delay(100);
+
+  delay(300);
 
   // -----------------------------
   // Rest of the loop code here : 
