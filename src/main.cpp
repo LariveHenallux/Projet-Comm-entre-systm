@@ -15,7 +15,7 @@ Servo servo2;  // Deuxième servo
 #define pinServo1 22
 #define pinServo2 23
 #define pinOrangeE 2
-#define pinOrangeS 26
+#define pinOrangeS 16
 int a=0;
 
 const char* ssid     = "WIFI-IoT";
@@ -199,7 +199,11 @@ void setup() {
   OTASetup();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  servo1.attach(pinServo1);
+  servo1.setPeriodHertz(50);
+  servo1.attach(pinServo1, 500, 2400);
+
+  servo2.setPeriodHertz(50);
+  servo2.attach(pinServo2, 500, 2400);
   // -----------------------------
   // Rest of the setup code here : 
   ESP32PWM::allocateTimer(0);
@@ -219,13 +223,17 @@ if (!client.connected()) {
   // appuie sur un bouton envoie un message MQTT
 if (a==0){
   M5.Lcd.fillScreen(BLACK);
-  a+=1;
   servo1.write(0);
   int positionactuelle1 = 0; // Position initiale du servo1
+  servo2.write(0);
+  int positionactuelle2 = 0; // Position initiale du servo2
+  a+=1;
 }
+  M5.Lcd.fillScreen(BLACK);
   client.subscribe(topic3);
+  M5.Lcd.setTextColor(WHITE,BLACK);
   M5.Lcd.setCursor(0,0);
-  // M5.Lcd.setTextColor(WHITE,BLACK);
+  
   float c1=retourCapteur1();
   float c2=retourCapteur2();
   char message1[50];
@@ -235,17 +243,37 @@ if (a==0){
   dtostrf(c2, 4, 2, message2);
   client.publish(topic2, message2);
   if (ouvrirBarriereE) {
+    yield(); // Permet à d'autres tâches de s'exécuter avant de commencer le mouvement du servo
     listInstruction1(2, 100, positionActuelle1);
     positionActuelle1 = 100; // Met à jour la position actuelle du servo1
     for (int i = 0; i < 40; i++) {
-    client.loop();
-    ArduinoOTA.handle();
-    delay(50);
-}
+      client.loop();
+      ArduinoOTA.handle();
+      delay(50);
+      yield(); // Permet à d'autres tâches de s'exécuter pendant les délais
+    }
+  }
+
+  if (ouvrirBarriereS) {
+    yield(); // Permet à d'autres tâches de s'exécuter avant de commencer le mouvement du servo
+    listInstruction2(2, 100, positionActuelle2);
+    positionActuelle2 = 100; // Met à jour la position actuelle du servo2
+    for (int i = 0; i < 40; i++) {
+      client.loop();
+      ArduinoOTA.handle();
+      delay(50);
+      yield(); // Permet à d'autres tâches de s'exécuter pendant les délais
+    }
   }
   if (!ouvrirBarriereE) {
+    yield(); // Permet à d'autres tâches de s'exécuter avant de commencer le mouvement du servo
     listInstruction1(2, 0, positionActuelle1);
     positionActuelle1 = 0; // Met à jour la position actuelle du servo1
+  }
+  if (!ouvrirBarriereS) {
+    yield();
+    listInstruction2(2, 0, positionActuelle2);
+    positionActuelle2 = 0; // Met à jour la position actuelle du servo2
   }
   for (int i = 0; i < 6; i++) {
     client.loop();
