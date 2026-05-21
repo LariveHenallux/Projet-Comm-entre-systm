@@ -31,6 +31,21 @@ int positionActuelle2 = 0; // Position actuelle du servo2
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+
+void listInstruction(int temps, int degrefinal, int degreInit) {
+    
+    int hertz = temps * 20;
+    int step = (degrefinal - degreInit) / hertz; // Calculate the step size for each increment
+    int instruction = degreInit;
+    for(int i = 0; i < hertz; i++) {
+        int instruction = instruction  + step; // Initialize all elements to the corresponding step value
+        servo1.write(instruction);
+        delay(50);
+    }
+   
+    
+}
+
 void WifiConnect(){
   WiFi.begin(ssid, password);  // Connect wifi and return connection status.
   M5.lcd.print("Connecting to ");
